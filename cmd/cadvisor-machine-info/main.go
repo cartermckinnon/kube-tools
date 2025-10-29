@@ -18,12 +18,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to get machine info: %v", err)
 	}
-	log.Printf("Machine Info: %+v", info)
 	infoJson, err := json.MarshalIndent(info, "", "  ")
 	if err != nil {
 		log.Fatalf("failed to marshal machine info: %v", err)
 	}
-	fmt.Println(infoJson)
+	fmt.Println(string(infoJson))
 }
 
 // unsupportedImageFsInfoProvider is a no-op implementation of ImageFsInfoProvider.
