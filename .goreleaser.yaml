@@ -8,12 +8,13 @@ before:
     - go mod tidy
 
 builds:
-  - id: cadvisor-machine-info
-    main: ./cmd/cadvisor-machine-info
-    env:
-      - CGO_ENABLED=0
+  - main: ./cmd/cadvisor-machine-info
+    binary: cadvisor-machine-info
     goos:
       - linux
+    goarch:
+      - amd64
+      - arm64
 
 archives:
   - formats: [tar.gz]

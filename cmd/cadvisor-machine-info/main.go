@@ -1,4 +1,4 @@
-package cadvisormachineinfo2
+package main
 
 import (
 	"encoding/json"
