@@ -1,0 +1,36 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cloneranger
+  namespace: cloneranger
+  labels:
+    app: cloneranger
+spec:
+  selector:
+    matchLabels:
+      app: cloneranger
+  template:
+    metadata:
+      labels:
+        app: cloneranger
+    spec:
+      serviceAccountName: cloneranger
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloneranger-clone # do not schedule on cloned nodes
+                operator: DoesNotExist
+      containers:
+      - name: kwok
+        image: kwok
+        args:
+        - "--manage-nodes-with-label-selector=cloneranger-clone=true,cloneranger-template=$(NODE_NAME)"
+        - "--node-lease-duration-seconds=40"
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName

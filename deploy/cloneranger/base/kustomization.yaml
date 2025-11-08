@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: cloneranger
+
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - clusterrole.yaml
+  - clusterrolebinding.yaml
+  - daemonset.yaml
+
+# default image; users can override this with `kustomize edit set image` or
+# `kubectl apply -k` combined with a local edit
+images:
+  - name: kwok
+    newName: registry.k8s.io/kwok/kwok
+    newTag: v0.7.0
+
