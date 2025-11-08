@@ -8,8 +8,25 @@ before:
     - go mod tidy
 
 builds:
-  - main: ./cmd/cadvisor-machine-info
+  - id: cadvisor-machine-info
+    main: ./cmd/cadvisor-machine-info
     binary: cadvisor-machine-info
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+  - id: cloneranger
+    main: ./cmd/cloneranger
+    binary: cloneranger
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+  - id: etcd-entry-size
+    main: ./cmd/etcd-entry-size
+    binary: etcd-entry-size 
     goos:
       - linux
     goarch:
@@ -26,6 +43,8 @@ archives:
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
+    files:
+      - "deploy/**"
 
 changelog:
   sort: asc
@@ -33,6 +52,7 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+      - "^chore:"
 
 release:
   footer: >-
