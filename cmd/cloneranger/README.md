@@ -1,48 +1,32 @@
-cloneranger
-=============
+# `cloneranger`
 
-cloneranger helps simulate large Kubernetes clusters by creating "clone" Node objects and associated NodeLeases. A DaemonSet runs `kwok` on a set of template nodes; each kwok instance manages clones that reference the template node.
+---
 
-Files
-- `main.go` - CLI that supports `up` and `down` subcommands to create/delete clones.
-- `deploy/cloneranger/` - kustomize manifests (Namespace, ServiceAccount, ClusterRole, ClusterRoleBinding, DaemonSet).
+`cloneranger` helps simulate Kubernetes clusters with many nodes.
 
-Deploy with kustomize
+A DaemonSet runs `kwok` on a set of template nodes; each `kwok` instance manages that node's clones.
+The `cloneranger` CLI creates and destroys the clones.
 
-The deploy manifests are Kustomize-friendly. To apply with the default image:
+Most of the heavy-lifting is done by `kwok`, but the simulation is made more accurate by "cloning" a set of real nodes.
+This does a few things:
 
+1. Cloned nodes use real identifiers such as `providerID`, hardware labels, etc. This minimizes no-op handling in the control plane and other controllers.
+2. The size of the Node object is accurate. This puts the same pressure on `kube-apiserver`/`etcd` as real nodes.
+3. Network traffic to the control plane is more accurate vs. having a single `kwok` instance.
+
+## Usage
+
+1. Deploy the `kwok`-s:
 ```sh
 kubectl apply -k deploy/cloneranger
 ```
 
-To override the kwok image (example):
-
+2. Create clones:
 ```sh
-kustomize edit set image ghcr.io/kubewharf/kwok=myrepo/kwok:mytag
-kubectl apply -k deploy/cloneranger
+cloneranger up -n 10
 ```
 
-Usage examples
-
-Build the CLI:
-
+3. Delete clones:
 ```sh
-go build -o bin/cloneranger ./cmd/cloneranger
+cloneranger down
 ```
-
-Create 50 clones per template node (dry run):
-
-```sh
-./bin/cloneranger up --per-template 50 --dry-run
-```
-
-Delete all clones:
-
-```sh
-./bin/cloneranger down
-```
-
-Notes
-Notes
-- The DaemonSet is configured to run in the `cloneranger-system` namespace and uses the `cloneranger-kwok` ServiceAccount. RBAC is provided by the included ClusterRole and ClusterRoleBinding.
-- Leases are created in the `kube-node-lease` namespace. Ensure the namespace exists (Kubernetes control plane typically creates it).
