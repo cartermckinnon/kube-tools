@@ -21,6 +21,7 @@ builds:
     binary: cloneranger
     goos:
       - linux
+      - darwin
     goarch:
       - amd64
       - arm64
@@ -29,6 +30,7 @@ builds:
     binary: etcd-entry-size 
     goos:
       - linux
+      - darwin
     goarch:
       - amd64
       - arm64
