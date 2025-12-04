@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+if [ $# -lt 2 ]; then
+  echo "usage: kubectl node-push IMAGE_REF NODE_NAME [LOCAL_PORT]"
+  exit 1
+fi
+
+IMAGE_REF=$1
+NODE_NAME=$2
+LOCAL_PORT=${3:-5000}
+
+POD_NAME="kubectl-node-push-${RANDOM}"
+NAMESPACE="default"
+
+echo "Creating registry shim pod on $NODE_NAME..."
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: $POD_NAME
+  namespace: default
+spec:
+  nodeName: $NODE_NAME
+  restartPolicy: Never
+  containers:
+  - name: unregistry
+    image: ghcr.io/psviderski/unregistry:latest
+    securityContext:
+      privileged: true
+    env:
+    - name: UNREGISTRY_CONTAINERD_NAMESPACE
+      value: "k8s.io"
+    - name: UNREGISTRY_CONTAINERD_SOCK
+      value: "/run/containerd/containerd.sock"
+    volumeMounts:
+    - name: containerd-sock
+      mountPath: /run/containerd/containerd.sock
+  volumes:
+  - name: containerd-sock
+    hostPath:
+      path: /run/containerd/containerd.sock
+      type: Socket
+EOF
+
+kubectl wait --for=condition=Ready pod/$POD_NAME --timeout=30s
+
+kubectl port-forward pod/$POD_NAME $LOCAL_PORT:5000 > /dev/null 2>&1 &
+PF_PID=$!
+# for silent kills later
+disown
+# give port-forward a moment to establish
+sleep 2
+
+echo "Pushing image..."
+# Docker treats localhost as an "insecure registry" by default, so no TLS config needed
+docker tag "$IMAGE_REF" "localhost:$LOCAL_PORT/$IMAGE_REF"
+docker push "localhost:$LOCAL_PORT/$IMAGE_REF"
+
+echo "Cleaning up..."
+kill $PF_PID
+kubectl delete pod $POD_NAME
